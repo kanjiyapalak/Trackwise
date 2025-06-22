@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Productivity Tracker</title>
+  <style>
+    body {
+      width: 320px;
+      padding: 16px;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .mode-section {
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .mode-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .mode-title {
+      font-weight: 600;
+      font-size: 16px;
+      color: #333;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    .timer-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .timer-input {
+      width: 60px;
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .timer-button {
+      padding: 4px 12px;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .timer-button:hover {
+      background: #1976D2;
+    }
+    .timer-display {
+      font-size: 24px;
+      font-weight: 600;
+      text-align: center;
+      margin: 8px 0;
+      color: #333;
+    }
+    .site-limits {
+      margin-top: 12px;
+    }
+    .site-limit {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .site-input {
+      flex: 1;
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .time-input {
+      width: 60px;
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .add-site {
+      width: 100%;
+      padding: 8px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .add-site:hover {
+      background: #388E3C;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="mode-section">
+      <div class="mode-header">
+        <span class="mode-title">Focus Mode</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="focusModeToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      
+      <div id="focusModeContent">
+        <div class="timer-section">
+          <input type="number" id="focusTimer" class="timer-input" min="1" max="120" value="25" placeholder="Minutes">
+          <button id="startTimer" class="timer-button">Start Timer</button>
+        </div>
+        <div id="timerDisplay" class="timer-display" style="display: none;">25:00</div>
+        
+        <div class="site-limits">
+          <div class="site-limit">
+            <input type="text" class="site-input" placeholder="Website (e.g., facebook.com)">
+            <input type="number" class="time-input" min="1" max="1440" placeholder="Mins">
+          </div>
+          <button class="add-site" id="addSiteLimit">Add Site Limit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

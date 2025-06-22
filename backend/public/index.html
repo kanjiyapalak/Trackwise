@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Productivity Tracker Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Light Mode Colors */
+      --primary: #60a5fa;
+      --primary-light: #93c5fd;
+      --secondary: #6ee7b7;
+      --accent: #fde68a;
+      --success: #10b981;
+      --warning: #fbbf24;
+      --bg: linear-gradient(135deg, #f9fafb 0%, #e0f2fe 100%);
+      --card-bg: rgba(255, 255, 255, 0.8);
+      --glass-bg: rgba(224, 242, 254, 0.5);
+      --text: #334155;
+      --text-light: #64748b;
+      --border: rgba(96, 165, 250, 0.15);
+      --shadow: 0 8px 32px 0 rgba(96, 165, 250, 0.10);
+      --border-radius: 24px;
+      --transition: 0.3s cubic-bezier(.4,2,.3,1);
+    }
+
+    .dark-mode {
+      --primary: #93c5fd;
+      --primary-light: #bae6fd;
+      --secondary: #5eead4;
+      --accent: #fef08a;
+      --success: #34d399;
+      --warning: #fde68a;
+      --bg: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      --card-bg: rgba(30, 41, 59, 0.8);
+      --glass-bg: rgba(30, 41, 59, 0.5);
+      --text: #f1f5f9;
+      --text-light: #bae6fd;
+      --border: rgba(147, 197, 253, 0.15);
+      --shadow: 0 8px 32px 0 rgba(30, 41, 59, 0.25);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', 'Poppins', 'Nunito', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: all var(--transition);
+      line-height: 1.6;
+    }
+
+    .navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 2.5rem;
+      background: linear-gradient(135deg, #e0f2fe 0%, #f9fafb 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(96, 165, 250, 0.08);
+      animation: navbarFadeIn 0.6s ease-out;
+    }
+
+    .dark-mode .navbar {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    }
+
+    @keyframes navbarFadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .nav-left {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: 1px;
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .nav-right button {
+      padding: 0.6rem 1.2rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: linear-gradient(135deg, #e0f2fe 0%, #f9fafb 100%);
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .dark-mode .nav-right button {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: var(--primary);
+    }
+
+    .nav-right button:hover, .nav-right button.active {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(96, 165, 250, 0.15);
+    }
+
+    .content {
+      margin-top: 6rem;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .chart-container {
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .chart-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, 
+        rgba(96, 165, 250, 0.08) 0%,
+        rgba(110, 231, 183, 0.08) 100%);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .chart-container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .chart-container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(96, 165, 250, 0.12);
+    }
+
+    .chart-container:hover::before,
+    .chart-container:hover::after {
+      opacity: 1;
+    }
+
+    .chart-container h2 {
+      color: var(--text);
+      margin-bottom: 1.2rem;
+      font-size: 1.3rem;
+      font-weight: 700;
+      position: relative;
+      z-index: 1;
+      padding: 0.5rem 1rem;
+      background: #e0f2fe;
+      border-radius: 12px;
+      display: inline-block;
+    }
+
+    .chart-controls {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .chart-controls button {
+      padding: 0.4rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: linear-gradient(135deg, #e0f2fe 0%, #f9fafb 100%);
+      color: var(--primary);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .dark-mode .chart-controls button {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: var(--primary);
+    }
+
+    .chart-controls button.active {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 15px rgba(96, 165, 250, 0.15);
+    }
+
+    .chart-controls button:hover:not(.active) {
+      background: var(--glass-bg);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      z-index: 1;
+    }
+
+    .top-sites {
+      max-width: 900px;
+      margin: 2rem auto;
+      display: flex;
+      gap: 2rem;
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .top-sites::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, 
+        rgba(96, 165, 250, 0.05) 0%,
+        rgba(110, 231, 183, 0.05) 100%);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .top-sites:hover::before {
+      opacity: 1;
+    }
+
+    .top-productive, .top-unproductive {
+      flex: 1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .top-sites h3 {
+      color: var(--text);
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      background: #e0f2fe;
+      border-radius: 12px;
+      display: inline-block;
+    }
+
+    .top-sites ol {
+      list-style: none;
+      padding: 0;
+    }
+
+    .top-sites li {
+      background: var(--glass-bg);
+      margin-bottom: 0.8rem;
+      padding: 1rem;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--border);
+      transition: all var(--transition);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .top-sites li:hover {
+      transform: translateX(5px);
+      border-color: var(--primary);
+      box-shadow: 0 4px 20px rgba(96, 165, 250, 0.10);
+    }
+
+    .site-name {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .site-time {
+      color: var(--text-light);
+      font-size: 0.9rem;
+    }
+
+    .site-percent {
+      padding: 0.3rem 0.6rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .top-productive .site-percent {
+      background: rgba(96, 165, 250, 0.10);
+      color: var(--primary);
+      border: 1px solid rgba(96, 165, 250, 0.18);
+    }
+
+    .top-unproductive .site-percent {
+      background: rgba(110, 231, 183, 0.10);
+      color: var(--secondary);
+      border: 1px solid rgba(110, 231, 183, 0.18);
+    }
+
+    @media (max-width: 900px) {
+      .content {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+      }
+      
+      .navbar {
+        padding: 1rem;
+      }
+      
+      .top-sites {
+        flex-direction: column;
+        padding: 1.5rem;
+        gap: 1.5rem;
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--glass-bg);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(var(--primary), var(--secondary));
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(var(--secondary), var(--primary));
+    }
+
+    .dark-mode .chart-container h2,
+    .dark-mode .top-sites h3 {
+      background: rgba(30,41,59,0.85) !important;
+      color: #bae6fd !important;
+    }
+
+    .focus-btn {
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+    
+    .focus-btn:hover {
+      transform: translateY(-2px);
+    }
+    
+    .focus-section {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    
+    .focus-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .focus-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .timer-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    #focusTimerInput {
+      width: 80px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--glass-bg);
+      color: var(--text);
+    }
+    
+    .primary-btn {
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    
+    .secondary-btn {
+      background: var(--glass-bg);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    
+    .timer-display {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--primary);
+      text-align: center;
+    }
+    
+    .site-limits-container {
+      margin-top: 24px;
+    }
+    
+    .site-limits {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .site-limit {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .site-input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--glass-bg);
+      color: var(--text);
+    }
+    
+    .time-input {
+      width: 80px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--glass-bg);
+      color: var(--text);
+    }
+    #siteLimitsSection {
+      max-width: 420px;
+      margin: 4rem auto 2rem auto;
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 2rem 2.5rem;
+      font-size: 1.08rem;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #siteLimitsSection h2 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      color: var(--primary);
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+
+    #addLimitForm {
+      display: flex;
+      gap: 0.7rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    #addLimitForm input[type='text'],
+    #addLimitForm input[type='number'] {
+      flex: 1 1 120px;
+      padding: 0.6rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--glass-bg);
+      color: var(--text);
+      font-size: 1.05rem;
+    }
+
+    #addLimitForm button {
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      color: white;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      padding: 0.6rem 1.4rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #addLimitForm button:hover {
+      background: var(--primary);
+    }
+
+    #limitsList > div {
+      margin-bottom: 1.1rem;
+      background: var(--glass-bg);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #limitsList b {
+      color: var(--primary);
+      font-size: 1.13rem;
+      font-weight: 700;
+    }
+
+    #limitsList button {
+      background: var(--glass-bg);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.4rem 0.9rem;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-left: 0.4rem;
+      transition: background 0.2s;
+    }
+
+    #limitsList button:hover {
+      background: var(--primary-light);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="nav-left">TrackWise</div>
+    <div class="nav-right">
+      <button data-range="daily" class="range-btn active">Daily</button>
+      <button data-range="weekly" class="range-btn">Weekly</button>
+      <button onclick="toggleDarkMode()">Dark Mode</button>
+      <button id="setWebsiteGoalBtn">Set Website Goal</button>
+      <button id="setTimeLimitBtn">Set Time Limit</button>
+      <!-- <button id="focusModeBtn" class="focus-btn">Focus Mode</button> -->
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Focus Mode Section -->
+    <div id="focusModeSection" class="focus-section" style="display: none;">
+      <div class="focus-header">
+        <h2>Focus Mode</h2>
+        <div class="focus-controls">
+          <div class="timer-controls">
+            <input type="number" id="focusTimerInput" min="1" max="120" value="25" placeholder="Minutes">
+            <button id="startFocusTimer" class="primary-btn">Start Timer</button>
+          </div>
+          <div id="focusTimerDisplay" class="timer-display" style="display: none;">25:00</div>
+        </div>
+      </div>
+      
+      <div class="site-limits-container">
+        <h3>Blocked Websites</h3>
+        <div class="site-limits">
+          <div class="site-limit">
+            <input type="text" class="site-input" placeholder="Website (e.g., facebook.com)">
+            <input type="number" class="time-input" min="1" max="1440" placeholder="Mins">
+          </div>
+          <button id="addSiteLimit" class="secondary-btn">Add Site Limit</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="totalChartContainer" class="chart-container">
+      <h2>Total Productive vs Unproductive</h2>
+      <div class="chart-controls">
+        <button data-chart-id="totalChart" data-chart-type="pie" class="active">Pie Chart</button>
+        <button data-chart-id="totalChart" data-chart-type="bar">Bar Graph</button>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="totalChart" width="300" height="300"></canvas>
+      </div>
+    </div>
+
+    <div id="productiveChartContainer" class="chart-container">
+      <h2>Productive Websites Breakdown</h2>
+      <div class="chart-controls">
+        <button data-chart-id="productiveChart" data-chart-type="pie" class="active">Pie Chart</button>
+        <button  data-chart-id="productiveChart" data-chart-type="bar">Bar Graph</button>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="productiveChart" width="300" height="300"></canvas>
+      </div>
+    </div>
+
+    <div id="unproductiveChartContainer" class="chart-container">
+      <h2>Unproductive Websites Breakdown</h2>
+      <div class="chart-controls">
+        <button data-chart-id="unproductiveChart" data-chart-type="pie" class="active">Pie Chart</button>
+        <button data-chart-id="unproductiveChart" data-chart-type="bar">Bar Graph</button>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="unproductiveChart" width="300" height="300"></canvas>
+      </div>
+    </div>
+
+  -->  <div id="abc" style="display:none;max-width:420px;margin:4rem auto 2rem auto;background:var(--card-bg);border-radius:20px;box-shadow:var(--shadow);padding:2rem 2.5rem;font-size:1.08rem;color:var(--text);flex-direction:column;align-items:center;">
+    <h2 style="margin-bottom:1rem;font-size:1.2rem;">Set Time Limit</h2>
+    <form id="pqr" style="width:100%;">
+      <label style="display:block;margin-bottom:0.5rem;">Website Domain (e.g. facebook.com):
+        <input type="text" id="tWebsite" required placeholder="e.g. facebook.com" style="width:100%;margin-top:0.2rem;padding:0.4rem 0.7rem;border-radius:8px;border:1px solid var(--border);background:var(--glass-bg);color:var(--text);">
+      </label>
+      <label style="display:block;margin-bottom:0.5rem;">Limit Time (minutes):
+        <input type="number" id="Minutes" min="1" required placeholder="Minutes" style="width:100%;margin-top:0.2rem;padding:0.4rem 0.7rem;border-radius:8px;border:1px solid var(--border);background:var(--glass-bg);color:var(--text);">
+      </label>
+      <div style="display:flex;gap:1rem;margin-top:1.2rem;">
+        <button type="submit" style="flex:1;background:linear-gradient(90deg,var(--primary),var(--secondary));color:white;font-weight:600;padding:0.6rem 0;border:none;border-radius:10px;cursor:pointer;">Save</button>
+        <button type="button" id="closeSiteLimitsSection" style="flex:1;background:var(--glass-bg);color:var(--primary);font-weight:600;padding:0.6rem 0;border:none;border-radius:10px;cursor:pointer;">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div> 
+
+  <div class="top-sites" id="topSites" style="max-width: 700px; margin: 2rem auto 0 auto;">
+    <div class="top-productive">
+      <h3>Top 5 Productive Websites (<span id="topSitesRange"></span>):</h3>
+      <ol id="topProductiveSitesList"></ol>
+    </div>
+    <div class="top-unproductive">
+      <h3>Top 5 Unproductive Websites (<span id="topSitesRange2"></span>):</h3>
+      <ol id="topUnproductiveSitesList"></ol>
+    </div>
+  </div>
+
+  <!-- Website Goals Progress Section -->
+  <div id="websiteGoalsSection" style="max-width:700px;margin:7.5rem auto 1.5rem auto;display:none;"></div>
+
+  <!-- Website Limits Cards Section -->
+  <h2 style="max-width:700px;margin:2rem auto 1rem auto;font-size:1.4rem;font-weight:800;color:var(--primary);text-align:center;letter-spacing:0.5px;">Website Time Limits</h2>
+  <div id="websiteLimitsCardsSection" style="max-width:700px;margin:2rem auto 2rem auto;"></div>
+
+  <!-- Download PDF Button -->
+  <div style="text-align:center; margin: 2rem 0;">
+    <button id="downloadPDFBtn" class="primary-btn" style="font-size:1.1rem;">Download Progress as PDF</button>
+  </div>
+
+  <!-- Set Website Goal Modal -->
+  <div id="websiteGoalModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.3);z-index:200;align-items:center;justify-content:center;">
+    <div style="background:var(--card-bg);padding:2rem 2.5rem;border-radius:20px;box-shadow:var(--shadow);min-width:320px;max-width:90vw;">
+      <h2 style="margin-bottom:1rem;font-size:1.2rem;">Set Website Goal</h2>
+      <form id="websiteGoalForm">
+        <label style="display:block;margin-bottom:0.5rem;">Website Domain (e.g. leetcode.com):
+          <input type="text" id="goalWebsiteInput" required placeholder="e.g. leetcode.com" style="width:100%;margin-top:0.2rem;padding:0.4rem 0.7rem;border-radius:8px;border:1px solid var(--border);background:var(--glass-bg);color:var(--text);">
+        </label>
+        <label style="display:block;margin-bottom:0.5rem;">Goal Time (minutes):
+          <input type="number" id="goalMinutesInput" min="1" max="1440" required style="width:100%;margin-top:0.2rem;padding:0.4rem 0.7rem;border-radius:8px;border:1px solid var(--border);background:var(--glass-bg);color:var(--text);">
+        </label>
+        <label style="display:block;margin-bottom:0.5rem;">Type:
+          <select id="goalTypeInput" style="width:100%;margin-top:0.2rem;padding:0.4rem 0.7rem;border-radius:8px;border:1px solid var(--border);background:var(--glass-bg);color:var(--text);">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </label>
+        <div style="display:flex;gap:1rem;margin-top:1.2rem;">
+          <button type="submit" style="flex:1;background:linear-gradient(90deg,var(--primary),var(--secondary));color:white;font-weight:600;padding:0.6rem 0;border:none;border-radius:10px;cursor:pointer;">Save</button>
+          <button type="button" id="closeWebsiteGoalModal" style="flex:1;background:var(--glass-bg);color:var(--primary);font-weight:600;padding:0.6rem 0;border:none;border-radius:10px;cursor:pointer;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Set Time Limit Modal -->
+  <div id="timeLimitModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:200; align-items:center; justify-content:center;">
+    <div style="background:var(--card-bg); padding:2rem 2.5rem; border-radius:20px; box-shadow:var(--shadow); min-width:320px; max-width:420px; display:flex; flex-direction:column; align-items:center;">
+        <h2 style="margin-bottom:1rem;font-size:1.2rem;">Set Time Limit</h2>
+        <form id="addLimitForm" style="width:100%; display:flex; flex-direction:column; gap:1rem;">
+            <label style="display:block;">Website Domain (e.g. facebook.com):
+              <input type="text" id="limitWebsite" required placeholder="e.g. facebook.com" style="width:100%;margin-top:0.2rem;padding:0.4rem 0.7rem;border-radius:8px;border:1px solid var(--border);background:var(--glass-bg);color:var(--text);">
+            </label>
+            <label style="display:block;">Limit Time (minutes):
+              <input type="number" id="limitMinutes" min="1" required placeholder="Minutes" style="width:100%;margin-top:0.2rem;padding:0.4rem 0.7rem;border-radius:8px;border:1px solid var(--border);background:var(--glass-bg);color:var(--text);">
+            </label>
+            <label style="display:block;">Type:
+              <select id="limitTypeInput" style="width:100%;margin-top:0.2rem;padding:0.4rem 0.7rem;border-radius:8px;border:1px solid var(--border);background:var(--glass-bg);color:var(--text);">
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+              </select>
+            </label>
+            <div style="display:flex;gap:1rem;">
+                <button type="submit" style="flex:1;background:linear-gradient(90deg,var(--primary),var(--secondary));color:white;font-weight:600;padding:0.6rem 0;border:none;border-radius:10px;cursor:pointer;">Save</button>
+                <button type="button" id="closeTimeLimitModal" style="flex:1;background:var(--glass-bg);color:var(--primary);font-weight:600;padding:0.6rem 0;border:none;border-radius:10px;cursor:pointer;">Cancel</button>
+            </div>
+        </form>
+    </div>
+  </div>
+
+  <!-- ✅ formatTime is now BEFORE dashboard.js -->
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+
+    function formatTime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const remainingSeconds = seconds % 60;
+      if (hours > 0) return `${hours}h ${minutes}m ${remainingSeconds}s`;
+      if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
+      return `${remainingSeconds}s`;
+    }
+
+    // --- FOCUS MODE STATE PERSISTENCE ---
+    let focusTimerInterval = null;
+    let remainingTime = 0;
+    let blockedSites = [];
+    let focusModeActive = false;
+
+    // --- SYNC TO CHROME STORAGE FOR EXTENSION ---
+    function saveFocusModeState() {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ focusMode: focusModeActive });
+      }
+    }
+    function saveFocusTimerEnd() {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ focusTimerEnd: Date.now() + remainingTime * 1000 });
+      }
+    }
+    function saveBlockedSites() {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ blockedSites });
+      }
+    }
+
+    // Restore state on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      // Restore Focus Mode
+      focusModeActive = localStorage.getItem('focusMode') === 'true';
+      if (focusModeActive) {
+        document.getElementById('focusModeSection').style.display = 'block';
+      }
+      // Restore Timer
+      const timerEnd = parseInt(localStorage.getItem('focusTimerEnd'), 10);
+      if (timerEnd && timerEnd > Date.now()) {
+        remainingTime = Math.floor((timerEnd - Date.now()) / 1000);
+        startFocusTimer(true); // true = restoring
+      }
+      // Restore Blocked Sites
+      blockedSites = JSON.parse(localStorage.getItem('blockedSites') || '[]');
+      renderBlockedSites();
+    });
+
+
+
+    document.getElementById('startFocusTimer').addEventListener('click', () => {
+      if (focusTimerInterval) {
+        stopFocusTimer();
+      } else {
+        const timerInput = document.getElementById('focusTimerInput');
+        remainingTime = (parseInt(timerInput.value) || 25) * 60;
+        localStorage.setItem('focusTimerEnd', Date.now() + remainingTime * 1000);
+        saveFocusTimerEnd();
+        startFocusTimer();
+      }
+    });
+
+    function startFocusTimer(restoring = false) {
+      const timerDisplay = document.getElementById('focusTimerDisplay');
+      const startButton = document.getElementById('startFocusTimer');
+      startButton.textContent = 'Stop Timer';
+      timerDisplay.style.display = 'block';
+      updateTimerDisplay();
+      if (!restoring) {
+        localStorage.setItem('focusTimerEnd', Date.now() + remainingTime * 1000);
+        saveFocusTimerEnd();
+      }
+      focusTimerInterval = setInterval(() => {
+        remainingTime--;
+        updateTimerDisplay();
+        if (remainingTime <= 0) {
+          stopFocusTimer();
+          showNotification('Focus Session Complete!', 'Time to take a break.');
+        }
+      }, 1000);
+    }
+
+    function stopFocusTimer() {
+      clearInterval(focusTimerInterval);
+      focusTimerInterval = null;
+      document.getElementById('startFocusTimer').textContent = 'Start Timer';
+      document.getElementById('focusTimerDisplay').style.display = 'none';
+      localStorage.removeItem('focusTimerEnd');
+      saveFocusTimerEnd();
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(remainingTime / 60);
+      const seconds = remainingTime % 60;
+      document.getElementById('focusTimerDisplay').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function showNotification(title, message) {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            new Notification(title, { body: message });
+          }
+        });
+      }
+    }
+
+    // --- BLOCKED SITES PERSISTENCE ---
+    function renderBlockedSites() {
+      const siteLimitsContainer = document.querySelector('.site-limits');
+      // Remove all except the first (input row) and Add button
+      siteLimitsContainer.querySelectorAll('.site-limit').forEach((el, idx) => { if (idx > 0) el.remove(); });
+      blockedSites.forEach((site, index) => {
+        const newLimit = document.createElement('div');
+        newLimit.className = 'site-limit';
+        newLimit.innerHTML = `
+          <input type="text" class="site-input" value="${site.website}" readonly>
+          <input type="number" class="time-input" value="${site.timeLimit}" readonly>
+          <button class="remove-limit">×</button>
+        `;
+        siteLimitsContainer.insertBefore(newLimit, document.getElementById('addSiteLimit'));
+        newLimit.querySelector('.remove-limit').addEventListener('click', () => {
+          blockedSites.splice(index, 1);
+          localStorage.setItem('blockedSites', JSON.stringify(blockedSites));
+          saveBlockedSites();
+          renderBlockedSites();
+        });
+      });
+    }
+
+    document.getElementById('addSiteLimit').addEventListener('click', () => {
+      const siteInputs = document.querySelectorAll('.site-limit');
+      const lastInput = siteInputs[siteInputs.length - 1];
+      const website = lastInput.querySelector('.site-input').value.trim();
+      const timeLimit = parseInt(lastInput.querySelector('.time-input').value);
+      if (website && timeLimit) {
+        blockedSites.push({ website, timeLimit });
+        localStorage.setItem('blockedSites', JSON.stringify(blockedSites));
+        saveBlockedSites();
+        renderBlockedSites();
+        lastInput.querySelector('.site-input').value = '';
+        lastInput.querySelector('.time-input').value = '';
+      }
+    });
+
+    // Set Time Limit Modal logic
+    // Show modal when button is clicked
+    document.getElementById('setTimeLimitBtn').onclick = function() {
+      document.getElementById('limitWebsite').value = '';
+      document.getElementById('limitMinutes').value = '';
+      document.getElementById('timeLimitModal').style.display = 'flex';
+    };
+    // Hide modal on cancel or background click
+    document.getElementById('closeTimeLimitModal').onclick = function() {
+      document.getElementById('timeLimitModal').style.display = 'none';
+    };
+    document.getElementById('timeLimitModal').onclick = function(e) {
+      if (e.target === this) this.style.display = 'none';
+    };
+    // Handle form submit
+    document.getElementById('addLimitForm').onsubmit = function(e) {
+      e.preventDefault();
+      const website = document.getElementById('limitWebsite').value.trim().toLowerCase();
+      const minutes = parseInt(document.getElementById('limitMinutes').value, 10);
+      const type = document.getElementById('limitTypeInput').value;
+      fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ website, minutes, type })
+      }).then(() => {
+        renderWebsiteLimitCards(getCurrentRange());
+        this.reset();
+        document.getElementById('timeLimitModal').style.display = 'none';
+      }).catch(error => {
+        console.error('Error saving limit:', error);
+        this.reset();
+        document.getElementById('timeLimitModal').style.display = 'none';
+      });
+    };
+  </script>
+  <script src="dashboard.js"></script>
+  <script src="websiteGoals.js"></script>
+  <script>
+    const API = 'http://localhost:5000/api/limits';
+
+    
+
+    // document.getElementById('addLimitForm').onsubmit = function(e) {
+    //   e.preventDefault();
+    //   const website = document.getElementById('limitWebsite').value.trim().toLowerCase();
+    //   const minutes = parseInt(document.getElementById('limitMinutes').value, 10);
+    //   fetch(API, {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({ website, minutes })
+    //   }).then(() => {
+    //     fetchLimits();
+    //     this.reset();
+    //   });
+    // };
+
+    window.extendLimit = function(website) {
+      fetch(`${API}/extend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ website, extraMinutes: 5 })
+      }).then(fetchLimits);
+    };
+
+    window.removeLimit = function(website) {
+      fetch(API, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ website })
+      }).then(fetchLimits);
+    };
+
+    //fetchLimits();
+   // setInterval(fetchLimits, 60000); // Refresh every minute
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var setTimeLimitBtn = document.getElementById('setTimeLimitBtn');
+      var siteLimitsSection = document.getElementById('siteLimitsSection');
+      var closeSiteLimitsSection = document.getElementById('closeSiteLimitsSection');
+      if (setTimeLimitBtn && siteLimitsSection) {
+        setTimeLimitBtn.onclick = function() {
+          siteLimitsSection.style.display = 'flex';
+        };
+      }
+      if (closeSiteLimitsSection && siteLimitsSection) {
+        closeSiteLimitsSection.onclick = function() {
+          siteLimitsSection.style.display = 'none';
+        };
+      }
+    });
+  </script>
+
+  <script>
+    function renderWebsiteLimitCards(range = 'daily') {
+      fetch(`${API}?range=${range}`)
+        .then(res => res.json())
+        .then(limits => {
+          const section = document.getElementById('websiteLimitsCardsSection');
+          section.innerHTML = '';
+          if (!limits.length) {
+            section.innerHTML = '<div style="color:var(--text-light);text-align:center;">No site limits set yet.</div>';
+            return;
+          }
+          limits.forEach(limit => {
+            // Fetch usage based on the limit's specific type (daily/weekly)
+            fetch(`${API}/usage/${limit.website}?type=${range}`)
+              .then(res => res.json())
+              .then(({ seconds }) => {
+                const usedSeconds = seconds || 0;
+                const usedMin = Math.floor(usedSeconds / 60);
+                const usedSec = usedSeconds % 60;
+                const totalSeconds = limit.minutes * 60;
+                const leftSeconds = Math.max(0, totalSeconds - usedSeconds);
+                const leftMin = Math.floor(leftSeconds / 60);
+                const leftSec = leftSeconds % 60;
+                const percent = totalSeconds > 0 ? Math.min(100, Math.round((usedSeconds / totalSeconds) * 100)) : 0;
+                const card = document.createElement('div');
+                card.style = 'background:var(--card-bg);border-radius:16px;padding:1.2rem 1.5rem;box-shadow:var(--shadow);margin-bottom:1.2rem;position:relative;';
+                card.innerHTML = `
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+                    <div style="font-weight:600;font-size:1.05rem;color:var(--primary);">${limit.website}</div>
+                    <div>
+                      <button class="update-limit-btn" style="background:var(--glass-bg);color:var(--primary);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.9rem;font-size:1rem;cursor:pointer;margin-right:0.5rem;">Update</button>
+                      <button class="delete-limit-btn" style="background:var(--glass-bg);color:var(--primary);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.9rem;font-size:1rem;cursor:pointer;">Delete</button>
+                    </div>
+                  </div>
+                  <div style="margin:0.5rem 0 0.7rem 0;color:var(--text-light);font-size:0.97rem;">
+                    Limit: <b>${limit.minutes} min</b> | Used: <b>${usedMin} min ${usedSec}s</b> | Left: <b>${leftMin} min ${leftSec}s</b> | Type: <b>${limit.type}</b>
+                  </div>
+                  <div style="background:var(--glass-bg);border-radius:12px;overflow:hidden;height:20px;box-shadow:0 2px 8px rgba(96,165,250,0.07);margin-bottom:0.3rem;">
+                    <div style="height:100%;width:${percent}%;background:linear-gradient(90deg,var(--primary),var(--secondary));transition:width 0.5s;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.95rem;">
+                      ${percent}%
+                    </div>
+                  </div>
+                  <form class="update-limit-form" style="display:none;gap:0.5rem;margin-top:0.5rem;">
+                    <input type="number" min="1" max="1440" value="${limit.minutes}" style="padding:0.4rem 0.7rem;border-radius:8px;border:1px solid var(--border);width:100px;">
+                    <button type="submit" style="background:var(--primary);color:white;font-weight:600;padding:0.4rem 1rem;border:none;border-radius:8px;cursor:pointer;">Save</button>
+                    <button type="button" class="cancel-update-btn" style="background:var(--glass-bg);color:var(--primary);font-weight:600;padding:0.4rem 1rem;border:none;border-radius:8px;cursor:pointer;">Cancel</button>
+                  </form>
+                `;
+                // Update button logic
+                card.querySelector('.update-limit-btn').onclick = () => {
+                  card.querySelector('.update-limit-form').style.display = 'flex';
+                  card.querySelector('.update-limit-btn').style.display = 'none';
+                };
+                // Cancel button logic
+                card.querySelector('.cancel-update-btn').onclick = () => {
+                  card.querySelector('.update-limit-form').style.display = 'none';
+                  card.querySelector('.update-limit-btn').style.display = '';
+                };
+                // Save (submit) logic
+                card.querySelector('.update-limit-form').onsubmit = function(e) {
+                  e.preventDefault();
+                  const newMinutes = parseInt(this.querySelector('input').value, 10);
+                  fetch(API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ website: limit.website, minutes: newMinutes, type: limit.type })
+                  }).then(() => {
+                    renderWebsiteLimitCards(range);
+                  });
+                };
+                // Delete logic
+                card.querySelector('.delete-limit-btn').onclick = () => {
+                  if (confirm(`Delete time limit for ${limit.website}?`)) {
+                    fetch(API, {
+                      method: 'DELETE',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ website: limit.website, type: limit.type })
+                    }).then(() => renderWebsiteLimitCards(range));
+                  }
+                };
+                section.appendChild(card);
+              });
+          });
+        });
+    }
+
+    // Get current range from active button
+    function getCurrentRange() {
+      const activeBtn = document.querySelector('.range-btn.active');
+      return activeBtn ? activeBtn.dataset.range : 'daily';
+    }
+
+    // Initial render with current range
+    renderWebsiteLimitCards(getCurrentRange());
+    setInterval(() => renderWebsiteLimitCards(getCurrentRange()), 60000); // Real-time update every minute
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // ... existing code ...
+      // Unproductive Site Limit Form logic
+      const API = 'http://localhost:5000/api/limits';
+      const unproductiveForm = document.getElementById('unproductiveSiteLimitForm');
+      if (unproductiveForm) {
+        unproductiveForm.onsubmit = function(e) {
+         e.preventDefault();
+      const website = document.getElementById('limitWebsite').value.trim().toLowerCase();
+      const minutes = parseInt(document.getElementById('limitMinutes').value, 10);
+      fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ website, minutes })
+      }).then(() => {
+        fetchLimits();
+        this.reset();
+      });
+    };
+      }
+      var addLimitForm = document.getElementById('addLimitForm');
+      var addLimitForm = document.getElementById('addLimitForm');
+  
+    });
+  </script>
+  
+
+  <!-- Add jsPDF CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    function formatMinSec(seconds) {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds % 60;
+      return `${min}m ${sec}s`;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // ... existing code ...
+      document.getElementById('downloadPDFBtn').onclick = async function() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Detect range (daily/weekly)
+        let range = 'daily';
+        const activeBtn = document.querySelector('.range-btn.active');
+        if (activeBtn && activeBtn.dataset.range) range = activeBtn.dataset.range;
+
+        // Title
+        doc.setFontSize(18);
+        doc.text(`Productivity Tracker - Progress Report (${range.charAt(0).toUpperCase() + range.slice(1)})`, 14, 18);
+
+        let y = 28;
+        doc.setFontSize(13);
+
+        // 1. Productive/Unproductive Time
+        const analytics = await fetch(`http://localhost:5000/api/analytics?range=${range}`).then(res => res.json());
+        doc.text(`Total Productive Time: ${formatMinSec(analytics.productiveTime)}`, 14, y);
+        y += 8;
+        doc.text(`Total Unproductive Time: ${formatMinSec(analytics.unproductiveTime)}`, 14, y);
+        y += 10;
+
+        // 2. Productive Websites
+        doc.setFontSize(12);
+        doc.text('Productive Websites:', 14, y);
+        y += 7;
+        for (const [site, seconds] of Object.entries(analytics.productiveSites)) {
+          doc.text(`${site}: ${formatMinSec(seconds)}`, 18, y);
+          y += 6;
+        }
+        y += 4;
+
+        // 3. Unproductive Websites
+        doc.setFontSize(12);
+        doc.text('Unproductive Websites:', 14, y);
+        y += 7;
+        for (const [site, seconds] of Object.entries(analytics.unproductiveSites)) {
+          doc.text(`${site}: ${formatMinSec(seconds)}`, 18, y);
+          y += 6;
+        }
+        y += 8;
+
+        // 4. Website Goals with time tracking
+        const goals = await fetch('http://localhost:5000/api/goals').then(res => res.json());
+        doc.setFontSize(12);
+        doc.text('Website Goals:', 14, y);
+        y += 7;
+        if (goals.length === 0) {
+          doc.text('No goals set.', 18, y);
+          y += 6;
+        } else {
+          for (const goal of goals) {
+            // Find time spent for this website in analytics
+            let spentSeconds = 0;
+            if (goal.type === range) {
+              const prodSites = analytics.productiveSites || {};
+              spentSeconds = prodSites[goal.website] || 0;
+            }
+            const goalSeconds = goal.minutes * 60;
+            const percent = goalSeconds > 0 ? Math.min(100, Math.round((spentSeconds / goalSeconds) * 100)) : 0;
+            const leftSeconds = Math.max(0, goalSeconds - spentSeconds);
+            doc.text(
+              `${goal.website} - ${goal.minutes} min (${goal.type}) | Used: ${formatMinSec(spentSeconds)} | Left: ${formatMinSec(leftSeconds)} | ${percent}%`,
+              18, y
+            );
+            y += 6;
+          }
+        }
+        y += 8;
+
+        // 5. Website Time Limits & Progress
+        doc.setFontSize(12);
+        doc.text('Website Time Limits:', 14, y);
+        y += 7;
+        doc.text('Domain', 14, y);
+        doc.text('Limit', 60, y);
+        doc.text('Used', 90, y);
+        doc.text('Left', 120, y);
+        doc.text('Percent', 150, y);
+        y += 7;
+        const API = 'http://localhost:5000/api/limits';
+        const limits = await fetch(API).then(res => res.json());
+        for (const limit of limits) {
+          const usage = await fetch(`${API}/usage/${limit.website}?type=${range}`).then(res => res.json());
+          const usedSeconds = usage.seconds || 0;
+          const usedMin = Math.floor(usedSeconds / 60);
+          const usedSec = usedSeconds % 60;
+          const totalSeconds = limit.minutes * 60;
+          const leftSeconds = Math.max(0, totalSeconds - usedSeconds);
+          const leftMin = Math.floor(leftSeconds / 60);
+          const leftSec = leftSeconds % 60;
+          const percent = totalSeconds > 0 ? Math.min(100, Math.round((usedSeconds / totalSeconds) * 100)) : 0;
+          doc.text(limit.website, 14, y);
+          doc.text(String(limit.minutes), 60, y);
+          doc.text(`${usedMin}m ${usedSec}s`, 100, y);
+          doc.text(`${leftMin}m ${leftSec}s`, 140, y);
+          doc.text(percent + '%', 170, y);
+          y += 7;
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+        }
+
+        doc.save(`progress_report_${range}.pdf`);
+      };
+      // ... existing code ...
+    });
+  </script>
+
+</body>
+</html>
